@@ -28,7 +28,7 @@ def predict_sequences_multiple(model, data, window_size, prediction_len):
         curr_frame = data[i*prediction_len]
         predicted = []
         for j in range(prediction_len):
-            predicted.append(model.predict(curr_frame[np.newaxis,:,:])[0,0])
+            predicted.append(model.predict(curr_frame[np.newaxis, :, :])[0, 0])
             curr_frame = curr_frame[1:]
             curr_frame = np.insert(curr_frame, [window_size-1], predicted[-1], axis=0)
         prediction_seqs.append(predicted)
@@ -76,7 +76,7 @@ dl.create_clean_datafile(
     batch_size=configs['data']['batch_size'],
     x_window_size=configs['data']['x_window_size'],
     y_window_size=configs['data']['y_window_size'],
-    y_col=configs['data']['y_predict_column'],
+    y_col=configs['data']['y_predict_column'],    # TODO change y_col to y_lag, and y_col is useless now.
     filter_cols=configs['data']['filter_columns'],
     normalise=False
 )
@@ -114,7 +114,7 @@ predictions = model.predict_generator(
     generator_strip_xy(data_gen_test, true_values),
     steps=steps_test
 )
-
+predictions = dl.scalar.inverse_transform(predictions)
 # Save our predictions
 with h5py.File(configs['model']['filename_predictions'], 'w') as hf:
     dset_p = hf.create_dataset('predictions', data=predictions)

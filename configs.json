@@ -1,7 +1,7 @@
 {
     "data": {
-        "filename": "data/20120101_20121231.h5",
-        "filename_clean": "data/clean_data_20120101_20131231.h5",
+        "filename": "raw_data/20120101_20121231.h5",
+        "filename_clean": "clean_data/20120101_20121231.h5",
         "filter_columns": [
             "fwd_rtn",
             "INNER_CODE",
@@ -142,7 +142,7 @@
         "epochs": 10,
         "loss_function": "mse",
         "optimiser_function": "Nadam",
-        "filename_model": "data/model_saved.h5",
-        "filename_predictions": "data/model_predictions.h5"
+        "filename_model": "model/model_saved.h5",
+        "filename_predictions": "model/model_predictions.h5"
     }
 }

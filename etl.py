@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 
 class ETL(object):
@@ -66,18 +67,22 @@ class ETL(object):
                 del raw_data[col]
 
         # Convert y-predict column name to numerical index
-        y_col = list(raw_data.columns).index(y_col)
 
         x_data = []
         y_data = []
         j = 0  # The number of sample
-
+        raw_data.dropna(inplace=True)
+        scalar = MinMaxScaler(feature_range=(0, 1))
+        self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
+        raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):
             data = raw_data[raw_data['INNER_CODE'] == code]
+            data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
             data.drop("INNER_CODE", axis=1, inplace=True)
             num_rows = len(data)
+            y_col = list(data.columns).index('rtn')
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
