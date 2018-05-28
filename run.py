@@ -18,6 +18,8 @@ def plot_results(predicted_data, true_data):
     ax.plot(true_data, label='True Data')
     plt.plot(predicted_data, label='Prediction')
     plt.legend()
+    t = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+    plt.savefig(t + ".png")
     plt.show()
 
 
@@ -81,6 +83,7 @@ dl.create_clean_datafile(
     normalise=False
 )
 '''
+
 print('> Generating clean data from:', configs['data']['filename_clean'], 'with batch_size:', configs['data']['batch_size'])
 
 data_gen_train = dl.generate_clean_data(
@@ -98,8 +101,6 @@ print('> Clean data has', nrows, 'data rows. Training on', ntrain, 'rows with', 
 
 model = lstm.build_network([ncols, 150, 150, 1])
 fit_model_threaded(model, data_gen_train, steps_per_epoch, configs)
-# t = threading.Thread(target=fit_model_threaded, args=[model, data_gen_train, steps_per_epoch, configs])
-# t.start()
 
 
 data_gen_test = dl.generate_clean_data(

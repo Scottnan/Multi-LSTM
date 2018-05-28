@@ -13,3 +13,6 @@ def log_config(filename, output_level):
         format='%(asctime)s : %(levelname)s  %(message)s',
         datefmt='%m-%d %H:%M:%S',
     )
+
+def log(level, msg):
+    logging
