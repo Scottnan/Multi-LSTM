@@ -5,11 +5,9 @@ import pandas as pd
 import datetime
 import h5py
 import matplotlib.pyplot as plt
-import log
 configs = json.loads(open('configs.json').read())
 tstart = time.time()
 log_time = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
-log.log_config(log_time + ".log", output_level="DEBUG")
 
 
 def plot_results(predicted_data, true_data):
@@ -71,7 +69,7 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs):
 
 
 dl = etl.ETL()
-'''
+
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -82,7 +80,6 @@ dl.create_clean_datafile(
     filter_cols=configs['data']['filter_columns'],
     normalise=False
 )
-'''
 
 print('> Generating clean data from:', configs['data']['filename_clean'], 'with batch_size:', configs['data']['batch_size'])
 

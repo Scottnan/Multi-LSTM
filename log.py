@@ -14,5 +14,18 @@ def log_config(filename, output_level):
         datefmt='%m-%d %H:%M:%S',
     )
 
-def log(level, msg):
-    logging
+
+def debug(msg):
+    exec("logging.debug('{}')".format(msg))
+
+
+def info(msg):
+    exec("logging.info('{}')".format(msg))
+
+
+def warning(msg):
+    exec("logging.warning('{}')".format(msg))
+
+
+def error(msg):
+    exec("logging.error('{}')".format(msg))
