@@ -1,16 +1,22 @@
 import h5py
 import numpy as np
 import pandas as pd
+from math import ceil, isnan
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
 
 
 class ETL(object):
+    def __init__(self, y_method="Numeric"):
+        assert y_method in ["Numeric", "MinMax", "Integer", "OneHot"], "y method must in \"Numeric\", \"MinMax\", " \
+                                                                       "\"Integer\", \"OneHot\""
+        self.method = y_method
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
     def generate_clean_data(self, filename, size, batch_size=1000, start_index=0):
         # TODO check the size/batch_size is int?
-        self.scalar = joblib.load('model/scalar.pkl')
+        if self.method == "MinMax":
+            self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
             i = start_index
             while True:
@@ -62,8 +68,10 @@ class ETL(object):
 
         print('> Clean datasets created in file `' + filename_out + '.h5`')
 
+    # TODO normalise method
     def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_col, filter_cols, normalise):
-        """Cleans and Normalises the data in batches `batch_size` at a time"""
+        """Cleans the data in batches `batch_size` at a time"""
+        # TODO read multiple files
         raw_data = pd.read_hdf(filepath)
         # codes = set(raw_data['INNER_CODE'].tolist())
 
@@ -78,11 +86,24 @@ class ETL(object):
         x_data = []
         y_data = []
         j = 0  # The number of sample
-        raw_data.dropna(inplace=True)
-        scalar = MinMaxScaler(feature_range=(0, 1))
-        self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
-        joblib.dump(self.scalar, 'model/scalar.pkl')
-        raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
+        if self.method == "MinMax":
+            raw_data.dropna(inplace=True)
+            scalar = MinMaxScaler(feature_range=(0, 1))
+            self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
+            joblib.dump(self.scalar, 'model/scalar.pkl')
+            raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
+            del raw_data['DATE']
+
+        if self.method == "Integer":
+            tmp = pd.DataFrame()
+            date = set(raw_data.DATE)
+            for d in date:
+                data = raw_data[raw_data.DATE == d]
+                self.y2integer(data)
+                tmp = pd.concat([tmp, data])
+            raw_data = tmp
+            del raw_data['DATE']
+
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):
             data = raw_data[raw_data['INNER_CODE'] == code]
@@ -121,6 +142,15 @@ class ETL(object):
                     x_data = []
                     y_data = []
                     yield (x_np_arr, y_np_arr)
+
+    @staticmethod
+    def y2integer(data, cate=5):
+        def fun(x):
+            if isnan(x):
+                return x
+            else:
+                return ceil(x / (1 / cate))
+        data['rank_ratio'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
 
     def zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""

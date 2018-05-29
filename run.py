@@ -1,25 +1,14 @@
 import time
 import lstm, etl, json
 import numpy as np
+import plot_utils as plot
 import pandas as pd
 import datetime
 import h5py
-import matplotlib.pyplot as plt
 configs = json.loads(open('configs.json').read())
 tstart = time.time()
 log_time = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
 # TODO plot learning curve and clean the code
-
-
-def plot_results(predicted_data, true_data):
-    fig = plt.figure(figsize=(18, 12), dpi=80, facecolor='w', edgecolor='k')
-    ax = fig.add_subplot(111)
-    ax.plot(true_data, label='True Data')
-    plt.plot(predicted_data, label='Prediction')
-    plt.legend()
-    t = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
-    plt.savefig(t + ".png")
-    plt.show()
 
 
 def predict_sequences_multiple(model, data, window_size, prediction_len):
@@ -34,18 +23,6 @@ def predict_sequences_multiple(model, data, window_size, prediction_len):
             curr_frame = np.insert(curr_frame, [window_size-1], predicted[-1], axis=0)
         prediction_seqs.append(predicted)
     return prediction_seqs
-
-
-def plot_results_multiple(predicted_data, true_data, prediction_len):
-    fig = plt.figure(figsize=(18, 12), dpi=80, facecolor='w', edgecolor='k')
-    ax = fig.add_subplot(111)
-    ax.plot(true_data, label='True Data')
-    # Pad the list of predictions to shift it in the graph to it's correct start
-    for i, data in enumerate(predicted_data):
-        padding = [None for p in range(i * prediction_len)]
-        plt.plot(padding + data, label='Prediction')
-        plt.legend()
-    plt.show()
 
 
 true_values = []
@@ -70,8 +47,8 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs):
     return
 
 
-dl = etl.ETL()
-'''
+dl = etl.ETL(y_method="Integer")
+
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -82,7 +59,7 @@ dl.create_clean_datafile(
     filter_cols=configs['data']['filter_columns'],
     normalise=False
 )
-'''
+
 print('> Generating clean data from:', configs['data']['filename_clean'], 'with batch_size:', configs['data']['batch_size'])
 
 with h5py.File(configs['data']['filename_clean'], 'r') as hf:
@@ -101,7 +78,7 @@ data_gen_train = dl.generate_clean_data(
 
 print('> Clean data has', nrows, 'data rows. Training on', ntrain, 'rows with', steps_per_epoch, 'steps-per-epoch')
 
-model = lstm.build_network([ncols, 150, 150, 1])
+model = lstm.build_cls_network([ncols, 150, 150, 50])
 fit_model_threaded(model, data_gen_train, steps_per_epoch, configs)
 
 ntest = nrows - ntrain
@@ -126,12 +103,10 @@ true_values = dl.scalar.inverse_transform(np.array(true_values).reshape(-1, 1))
 # Save our predictions
 with h5py.File(configs['model']['filename_predictions'], 'w') as hf:
     dset_p = hf.create_dataset('predictions', data=predictions)
-    dset_p[:] = predictions
     dset_y = hf.create_dataset('true_values', data=true_values)
-    dset_y[:] = true_values
     
-plot_results(predictions[:800], true_values[:800])
-
+plot.plot_results(predictions[:800], true_values[:800])
+'''
 # Reload the data-generator
 data_gen_test = dl.generate_clean_data(
     configs['data']['filename_clean'],
@@ -151,3 +126,4 @@ predictions_multiple = predict_sequences_multiple(
 )
 
 plot_results_multiple(predictions_multiple, true_values, window_size)
+'''

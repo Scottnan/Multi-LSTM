@@ -1,9 +1,10 @@
 {
     "data": {
         "filename": "raw_data/20120101_20121231.h5",
-        "filename_clean": "clean_data/20120101_20121231.h5",
+        "filename_clean": "clean_data/20120101_20121231_int_test.h5",
         "filter_columns": [
             "fwd_rtn",
+            "DATE",
             "INNER_CODE",
             "alpha001",
             "alpha002",
@@ -130,7 +131,29 @@
             "alpha188",
             "alpha189",
             "alpha190",
-            "alpha191"
+            "alpha191",
+            "hfd_apm",
+            "hfd_bm",
+            "hfd_bs_pressure",
+            "hfd_cash_flow",
+            "hfd_downside_volitility",
+            "hfd_down_illiq",
+            "hfd_entrust_bs_amount",
+            "hfd_entrust_bs_amount_acce",
+            "hfd_entrust_bs_volume",
+            "hfd_entrust_bs_volume_acce",
+            "hfd_illiq_ratio",
+            "hfd_imbalance_state",
+            "hfd_intraday_momentum",
+            "hfd_reverse_am",
+            "hfd_reverse_pm",
+            "hfd_skew",
+            "hfd_smart_money",
+            "hfd_upside_volitility",
+            "hfd_up_illiq",
+            "hfd_volatility",
+            "hfd_volume_ratio",
+            "rank_ratio"
         ],
         "batch_size": 100,
         "train_test_split": 0.8,
@@ -140,7 +163,7 @@
     },
     "model": {
         "epochs": 10,
-        "loss_function": "mse",
+        "loss_function": "categorical_crossentropy",
         "optimiser_function": "Nadam",
         "filename_model": "model/model_saved.h5",
         "filename_predictions": "model/model_predictions.h5"

@@ -40,6 +40,34 @@ def build_network(layers):
     return model
 
 
+def build_cls_network(layers):
+    model = Sequential()
+
+    model.add(LSTM(
+        input_dim=layers[0],
+        output_dim=layers[1],
+        return_sequences=True))
+    model.add(Dropout(0.2))
+
+    model.add(LSTM(
+        layers[2],
+        return_sequences=False))
+    model.add(Dropout(0.2))
+
+    model.add(Dense(
+        output_dim=layers[3]))
+    model.add(Activation(activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(Dense(5, activation='softmax'))
+
+    start = time.time()
+    model.compile(
+        loss=configs['model']['loss_function'],
+        optimizer=configs['model']['optimiser_function'])
+
+    print("> Compilation Time : ", time.time() - start)
+    return model
+
 def load_network(filename):
     # Load the h5 saved model and weights
     if os.path.isfile(filename):
