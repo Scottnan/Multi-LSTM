@@ -2,12 +2,14 @@ import h5py
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.externals import joblib
 
 
 class ETL(object):
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
     def generate_clean_data(self, filename, batch_size=1000, start_index=0):
+        self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
             i = start_index
             while True:
@@ -74,6 +76,7 @@ class ETL(object):
         raw_data.dropna(inplace=True)
         scalar = MinMaxScaler(feature_range=(0, 1))
         self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
+        joblib.dump(self.scalar, 'model/scalar.pkl')
         raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):

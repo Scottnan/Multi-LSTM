@@ -36,7 +36,7 @@ def predict_sequences_multiple(model, data, window_size, prediction_len):
 
 
 def plot_results_multiple(predicted_data, true_data, prediction_len):
-    fig = plt.figure(figsize=(18, 12), dpi= 80, facecolor='w', edgecolor='k')
+    fig = plt.figure(figsize=(18, 12), dpi=80, facecolor='w', edgecolor='k')
     ax = fig.add_subplot(111)
     ax.plot(true_data, label='True Data')
     # Pad the list of predictions to shift it in the graph to it's correct start
@@ -50,7 +50,7 @@ def plot_results_multiple(predicted_data, true_data, prediction_len):
 true_values = []
 
 
-def generator_strip_xy(data_gen, true_values):
+def generator_strip_xy(data_gen_test, true_values):
     for x, y in data_gen_test:
         true_values += list(y)
         yield x
@@ -115,10 +115,13 @@ predictions = model.predict_generator(
     steps=steps_test
 )
 predictions = dl.scalar.inverse_transform(predictions)
+true_values = dl.scalar.inverse_transform(np.array(true_values).reshape(-1, 1))
 # Save our predictions
 with h5py.File(configs['model']['filename_predictions'], 'w') as hf:
     dset_p = hf.create_dataset('predictions', data=predictions)
+    dset_p[:] = predictions
     dset_y = hf.create_dataset('true_values', data=true_values)
+    dset_y[:] = true_values
     
 plot_results(predictions[:800], true_values[:800])
 
