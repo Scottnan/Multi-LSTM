@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 configs = json.loads(open('configs.json').read())
 tstart = time.time()
 log_time = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+# TODO plot learning curve and clean the code
 
 
 def plot_results(predicted_data, true_data):
@@ -58,10 +59,11 @@ def generator_strip_xy(data_gen_test, true_values):
 
 def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs):
     """thread worker for model fitting - so it doesn't freeze on jupyter notebook"""
+    # TODO add validation set
     model.fit_generator(
         data_gen_train,
         steps_per_epoch=steps_per_epoch,
-        epochs=configs['model']['epochs']
+        epochs=configs['model']['epochs'],
     )
     model.save(configs['model']['filename_model'])
     print('> Model Trained! Weights saved in', configs['model']['filename_model'])
