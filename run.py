@@ -69,7 +69,7 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs):
 
 
 dl = etl.ETL()
-
+'''
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -80,34 +80,39 @@ dl.create_clean_datafile(
     filter_cols=configs['data']['filter_columns'],
     normalise=False
 )
-
+'''
 print('> Generating clean data from:', configs['data']['filename_clean'], 'with batch_size:', configs['data']['batch_size'])
-
-data_gen_train = dl.generate_clean_data(
-    configs['data']['filename_clean'],
-    batch_size=configs['data']['batch_size']
-)
 
 with h5py.File(configs['data']['filename_clean'], 'r') as hf:
     nrows = hf['x'].shape[0]
     ncols = hf['x'].shape[2]
     
 ntrain = int(configs['data']['train_test_split'] * nrows)
-steps_per_epoch = int((ntrain / configs['model']['epochs']) / configs['data']['batch_size'])
+steps_per_epoch = int(ntrain / configs['data']['batch_size'])
+trsize = steps_per_epoch * configs['data']['batch_size']
+
+data_gen_train = dl.generate_clean_data(
+    configs['data']['filename_clean'],
+    size=trsize,
+    batch_size=configs['data']['batch_size']
+)
+
 print('> Clean data has', nrows, 'data rows. Training on', ntrain, 'rows with', steps_per_epoch, 'steps-per-epoch')
 
 model = lstm.build_network([ncols, 150, 150, 1])
 fit_model_threaded(model, data_gen_train, steps_per_epoch, configs)
 
+ntest = nrows - ntrain
+steps_test = int(ntest / configs['data']['batch_size'])
+tesize = steps_test * configs['data']['batch_size']
 
 data_gen_test = dl.generate_clean_data(
     configs['data']['filename_clean'],
+    size=tesize,
     batch_size=configs['data']['batch_size'],
     start_index=ntrain
 )
 
-ntest = nrows - ntrain
-steps_test = int(ntest / configs['data']['batch_size'])
 print('> Testing model on', ntest, 'data rows with', steps_test, 'steps')
 
 predictions = model.predict_generator(

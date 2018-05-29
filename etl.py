@@ -8,13 +8,13 @@ from sklearn.externals import joblib
 class ETL(object):
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
-    def generate_clean_data(self, filename, batch_size=1000, start_index=0):
+    def generate_clean_data(self, filename, size, batch_size=1000, start_index=0):
         self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
             i = start_index
             while True:
-                data_x = hf['x'][i:i + batch_size]
-                data_y = hf['y'][i:i + batch_size]
+                data_x = hf['x'][i % size: (i + batch_size) % size]
+                data_y = hf['y'][i % size: (i + batch_size) % size]
                 i += batch_size
                 yield (data_x, data_y)
 
