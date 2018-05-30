@@ -55,7 +55,10 @@ class ETL(object):
             dset_x = hf.create_dataset('x', shape=x1.shape, maxshape=(None, x1.shape[1], x1.shape[2]), chunks=True)
             dset_x[:] = x1
             rcount_y = y1.shape[0]
-            dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,), chunks=True)
+            if self.method == "OneHot":
+                dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None, y1.shape[1], y1.shape[2]), chunks=True)
+            else:
+                dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,), chunks=True)
             dset_y[:] = y1
 
             for x_batch, y_batch in data_gen:
@@ -105,8 +108,7 @@ class ETL(object):
                 self.y2integer(data)
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
-            if self.method == "OneHot":
-                data['fwd_rtn'] = keras.utils.to_categorical(data['fwd_rtn'] - 1, num_classes=5)
+            raw_data.sort_values(by="DATE", inplace=True)
             raw_data.drop("DATE", axis=1, inplace=True)
 
         # Each stock feature is scrolled as sample data
@@ -115,8 +117,18 @@ class ETL(object):
             data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
             data.drop("INNER_CODE", axis=1, inplace=True)
+            if self.method == "OneHot":
+                data.dropna(inplace=True)
+                one_hot = keras.utils.to_categorical(data['rtn'] - 1, num_classes=5)
+                data.drop("rtn", axis=1, inplace=True)
+                old_col = data.columns
+                data = pd.concat([data, pd.DataFrame(one_hot)], axis=1)
+                new_col = data.columns
+                one_col = list(set(new_col) - set(old_col))
+                # y_col = [list(data.columns).index(c) for c in one_col].sort()   # TODO FIX BUG one_hot columns
+            else:
+                y_col = list(data.columns).index('rtn')
             num_rows = len(data)
-            y_col = list(data.columns).index('rtn')
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
@@ -132,8 +144,10 @@ class ETL(object):
                     abs_base, x_window_data = self.zero_base_standardise(x_window_data)
                     _, y_window_data = self.zero_base_standardise(y_window_data, abs_base=abs_base)
 
-                # Average of the desired predicter y column
-                y_average = np.average(y_window_data.values[:, y_col])
+                if self.method == "OneHot":
+                    y_average = y_window_data.values[:, -5:]
+                else:
+                    y_average = y_window_data.values[:, y_col]
                 x_data.append(x_window_data.values)
                 y_data.append(y_average)
                 i += 1
