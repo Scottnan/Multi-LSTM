@@ -142,7 +142,6 @@
             "hfd_entrust_bs_amount_acce",
             "hfd_entrust_bs_volume",
             "hfd_entrust_bs_volume_acce",
-            "hfd_illiq_ratio",
             "hfd_imbalance_state",
             "hfd_intraday_momentum",
             "hfd_reverse_am",

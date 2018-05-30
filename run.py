@@ -48,7 +48,7 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs):
 
 
 dl = etl.ETL(y_method="Integer")
-
+'''
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -59,7 +59,7 @@ dl.create_clean_datafile(
     filter_cols=configs['data']['filter_columns'],
     normalise=False
 )
-
+'''
 print('> Generating clean data from:', configs['data']['filename_clean'], 'with batch_size:', configs['data']['batch_size'])
 
 with h5py.File(configs['data']['filename_clean'], 'r') as hf:

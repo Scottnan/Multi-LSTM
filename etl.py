@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 import pandas as pd
+import keras
 from math import ceil, isnan
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
@@ -26,6 +27,8 @@ class ETL(object):
                 else:
                     data_x = hf['x'][i % size: size]
                     data_y = hf['y'][i % size: size]
+                if self.method == "Integer" or self.method == "OneHot":
+                    data_y = keras.utils.to_categorical(data_y - 1, num_classes=5)
                 i += batch_size
                 yield (data_x, data_y)
 
@@ -92,9 +95,9 @@ class ETL(object):
             self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
             joblib.dump(self.scalar, 'model/scalar.pkl')
             raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
-            del raw_data['DATE']
+            raw_data.drop("DATE", axis=1, inplace=True)
 
-        if self.method == "Integer":
+        if self.method == "Integer" or self.method == "OneHot":
             tmp = pd.DataFrame()
             date = set(raw_data.DATE)
             for d in date:
@@ -102,7 +105,9 @@ class ETL(object):
                 self.y2integer(data)
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
-            del raw_data['DATE']
+            if self.method == "OneHot":
+                data['fwd_rtn'] = keras.utils.to_categorical(data['fwd_rtn'] - 1, num_classes=5)
+            raw_data.drop("DATE", axis=1, inplace=True)
 
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):
@@ -150,7 +155,7 @@ class ETL(object):
                 return x
             else:
                 return ceil(x / (1 / cate))
-        data['rank_ratio'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
+        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)  # return a rank ratio
 
     def zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""
