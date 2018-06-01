@@ -160,7 +160,7 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs, val_data
 
 
 dl = etl.ETL(y_method="Integer")
-'''
+
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -226,6 +226,7 @@ with h5py.File(configs['model']['filename_predictions'], 'w') as hf:
     dset_y = hf.create_dataset('true_values', data=true_values)
     
 plot.plot_results(predictions[:800], true_values[:800])
+'''
 '''
 # Reload the data-generator
 data_gen_test = dl.generate_clean_data(

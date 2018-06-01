@@ -22,10 +22,10 @@ class ETL(object):
             i = 0
             while True:
                 if i % size < (i + batch_size) % size:
-                    data_x = hf['x'][start_index + i % size: start_index + (i + batch_size) % size]
+                    data_x = hf['x'][start_index + i % size: start_index + (i + batch_size) % size, :, 2:]
                     data_y = hf['y'][start_index + i % size: start_index + (i + batch_size) % size]
                 else:
-                    data_x = hf['x'][start_index + i % size: start_index + size]
+                    data_x = hf['x'][start_index + i % size: start_index + size, :, 2:]
                     data_y = hf['y'][start_index + i % size: start_index + size]
                 if self.method == 'Integer' or self.method == "OneHot":
                     data_y = keras.utils.to_categorical(data_y - 1, num_classes=3)
@@ -91,6 +91,8 @@ class ETL(object):
 
         x_data = []
         y_data = []
+        code_ser = []
+        date_ser = []
         j = 0  # The number of sample
         if self.method == "MinMax":
             raw_data.dropna(inplace=True)
@@ -112,14 +114,15 @@ class ETL(object):
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
             raw_data.sort_values(by="DATE", inplace=True)
-            raw_data.drop("DATE", axis=1, inplace=True)
+            # date = raw_data.DATE.tolist()
+            # raw_data.drop("DATE", axis=1, inplace=True)
 
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):
             data = raw_data[raw_data['INNER_CODE'] == code]
             data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
-            data.drop("INNER_CODE", axis=1, inplace=True)
+            # data.drop("INNER_CODE", axis=1, inplace=True)
             if self.method == "OneHot":
                 data.dropna(inplace=True)
                 one_hot = keras.utils.to_categorical(data['rtn'] - 1, num_classes=5)
@@ -153,6 +156,8 @@ class ETL(object):
                     y_average = np.average(y_window_data.values[:, y_col])
                 x_data.append(x_window_data.values)
                 y_data.append(y_average)
+                # date_ser.append(date[x_window_size + i])
+                # code_ser.append(code)
                 i += 1
                 j += 1
 
@@ -163,6 +168,8 @@ class ETL(object):
                     y_np_arr = np.array(y_data)
                     x_data = []
                     y_data = []
+                    # header = pd.concat([pd.Series(code_ser), pd.Series(date_ser)], axis=1)
+                    # header.to_excel("header2017.xlsx")
                     yield (x_np_arr, y_np_arr)
 
     @staticmethod
