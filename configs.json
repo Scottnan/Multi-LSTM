@@ -1,7 +1,7 @@
 {
     "data": {
-        "filename": "raw_data/20120101_20121231.h5",
-        "filename_clean": "clean_data/20120101_20121231_one_test.h5",
+        "filename": "raw_data/20170101_20171231.h5",
+        "filename_clean": "clean_data/20170101_20171231_int3.h5",
         "filter_columns": [
             "fwd_rtn",
             "DATE",
@@ -151,20 +151,20 @@
             "hfd_upside_volitility",
             "hfd_up_illiq",
             "hfd_volatility",
-            "hfd_volume_ratio",
-            "rank_ratio"
+            "hfd_volume_ratio"
         ],
-        "batch_size": 32,
+        "batch_size": 1000,
         "train_test_split": 0.8,
         "x_window_size": 30,
         "y_window_size": 1,
         "y_predict_column": "fwd_rtn"
     },
     "model": {
-        "epochs": 10,
+        "method": "Integer",
+        "epochs": 1,
         "loss_function": "categorical_crossentropy",
         "optimiser_function": "Adam",
-        "filename_model": "model/model_saved.h5",
+        "filename_model": "model/model_saved_2016.h5",
         "filename_predictions": "model/model_predictions.h5"
     }
 }

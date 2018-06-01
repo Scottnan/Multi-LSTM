@@ -19,16 +19,16 @@ class ETL(object):
         if self.method == "MinMax":
             self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
-            i = start_index
+            i = 0
             while True:
                 if i % size < (i + batch_size) % size:
-                    data_x = hf['x'][i % size: (i + batch_size) % size]
-                    data_y = hf['y'][i % size: (i + batch_size) % size]
+                    data_x = hf['x'][start_index + i % size: start_index + (i + batch_size) % size]
+                    data_y = hf['y'][start_index + i % size: start_index + (i + batch_size) % size]
                 else:
-                    data_x = hf['x'][i % size: size]
-                    data_y = hf['y'][i % size: size]
-                if self.method == "Integer" or self.method == "OneHot":
-                    data_y = keras.utils.to_categorical(data_y - 1, num_classes=5)
+                    data_x = hf['x'][start_index + i % size: start_index + size]
+                    data_y = hf['y'][start_index + i % size: start_index + size]
+                if self.method == 'Integer' or self.method == "OneHot":
+                    data_y = keras.utils.to_categorical(data_y - 1, num_classes=3)
                 i += batch_size
                 yield (data_x, data_y)
 
@@ -105,7 +105,10 @@ class ETL(object):
             date = set(raw_data.DATE)
             for d in date:
                 data = raw_data[raw_data.DATE == d]
-                self.y2integer(data)
+                if self.method == "OneHot":
+                    self.y2integer(data)
+                else:
+                    self.y2integer(data)  # useless if
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
             raw_data.sort_values(by="DATE", inplace=True)
@@ -147,7 +150,7 @@ class ETL(object):
                 if self.method == "OneHot":
                     y_average = y_window_data.values[:, -5:]
                 else:
-                    y_average = y_window_data.values[:, y_col]
+                    y_average = np.average(y_window_data.values[:, y_col])
                 x_data.append(x_window_data.values)
                 y_data.append(y_average)
                 i += 1
@@ -163,7 +166,25 @@ class ETL(object):
                     yield (x_np_arr, y_np_arr)
 
     @staticmethod
-    def y2integer(data, cate=5):
+    def y2_2class(data, per=0.3):
+        """
+        :param data: fwd_twn series
+        :param per:
+        :return: ratio <= per        x=1
+                 ratio >= 1-per      x=0
+                 per < ratio < 1-per x=na
+        """
+        def fun(x):
+            if isnan(x) or (x >= per or x <= 1 - per):
+                return np.nan
+            elif x <= per:
+                return 1
+            else:
+                return 0
+        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
+
+    @staticmethod
+    def y2integer(data, cate=3):
         def fun(x):
             if isnan(x):
                 return x

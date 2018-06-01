@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 from numpy import newaxis
 from keras.layers.core import Dense, Activation, Dropout
+from keras.layers import LeakyReLU
 from keras.layers.recurrent import LSTM
 from keras.models import Sequential
 from keras.models import load_model
@@ -56,17 +57,32 @@ def build_cls_network(layers):
 
     model.add(Dense(
         output_dim=layers[3]))
-    model.add(Activation(activation='relu'))
+    # model.add(Activation(activation='tanh'))
+    model.add(LeakyReLU(alpha=0.3))
+    # model.add(Activation(activation='relu'))
+
     model.add(Dropout(0.2))
-    model.add(Dense(5, activation='softmax'))
+    model.add(Dense(
+        output_dim=32))
+    model.add(Activation(activation='tanh'))
+    '''
+    model.add(LeakyReLU(alpha=0.3))
+    model.add(Dense(
+        output_dim=16))
+    model.add(LeakyReLU(alpha=0.3))
+    model.add(Dropout(0.2))
+    '''
+    model.add(Dense(3, activation='softmax'))
 
     start = time.time()
     model.compile(
         loss=configs['model']['loss_function'],
-        optimizer=configs['model']['optimiser_function'])
+        optimizer=configs['model']['optimiser_function'],
+        metrics=['accuracy'])
 
     print("> Compilation Time : ", time.time() - start)
     return model
+
 
 def load_network(filename):
     # Load the h5 saved model and weights
