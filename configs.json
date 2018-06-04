@@ -1,7 +1,7 @@
 {
     "data": {
-        "filename": "raw_data/20170101_20171231.h5",
-        "filename_clean": "clean_data/20170101_20171231_int3.h5",
+        "filename": "raw_data/20160101_20161231.h5",
+        "filename_clean": "clean_data/20160101_20161231_int3.h5",
         "filter_columns": [
             "fwd_rtn",
             "DATE",
@@ -161,7 +161,7 @@
     },
     "model": {
         "method": "Integer",
-        "epochs": 1,
+        "epochs": 5,
         "loss_function": "categorical_crossentropy",
         "optimiser_function": "Adam",
         "filename_model": "model/model_saved_2016.h5",

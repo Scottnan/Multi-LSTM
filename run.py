@@ -71,7 +71,7 @@ class MulLSTM(object):
         print('> Clean data has', nrows, 'data rows. Training on', ntrain, 'rows with', steps_per_epoch,
               'steps-per-epoch')
 
-        self.model = lstm.build_cls_network([ncols, 400, 400, 100])
+        self.model = lstm.build_cls_network([ncols-2, 400, 400, 100])
         self.fit_model(data_gen_train, steps_per_epoch, configs, val_data)
 
     def predict(self):
@@ -160,7 +160,7 @@ def fit_model_threaded(model, data_gen_train, steps_per_epoch, configs, val_data
 
 
 dl = etl.ETL(y_method="Integer")
-
+'''
 dl.create_clean_datafile(
     filename_in=configs['data']['filename'],
     filename_out=configs['data']['filename_clean'],
@@ -177,14 +177,15 @@ print('> Generating clean data from:', configs['data']['filename_clean'], 'with 
 with h5py.File(configs['data']['filename_clean'], 'r') as hf:
     nrows = hf['x'].shape[0]
     ncols = hf['x'].shape[2]
-    
-ntrain = int(configs['data']['train_test_split'] * nrows)
+
+ntrain = nrows
+# ntrain = int(configs['data']['train_test_split'] * nrows)
 steps_per_epoch = int(ntrain / configs['data']['batch_size'])
 trsize = steps_per_epoch * configs['data']['batch_size']
 nval = nrows - ntrain
 
 with h5py.File(configs['data']['filename_clean'], 'r') as hf:
-    val_data_x = hf['x'][ntrain:]
+    val_data_x = hf['x'][ntrain:, :, 2:]
     val_data_y = hf['y'][ntrain:]
     if dl.method == 'Integer' or dl.method == "OneHot":
         val_data_y = keras.utils.to_categorical(val_data_y - 1, num_classes=3)
@@ -198,9 +199,9 @@ data_gen_train = dl.generate_clean_data(
 
 print('> Clean data has', nrows, 'data rows. Training on', ntrain, 'rows with', steps_per_epoch, 'steps-per-epoch')
 
-model = lstm.build_cls_network([ncols, 400, 400, 100])
+model = lstm.build_cls_network([ncols-2, 400, 400, 100])
 fit_model_threaded(model, data_gen_train, steps_per_epoch, configs, val_data)
-
+'''
 ntest = nrows - ntrain
 steps_test = int(ntest / configs['data']['batch_size'])
 tesize = steps_test * configs['data']['batch_size']
@@ -224,10 +225,10 @@ predictions = model.predict_generator(
 with h5py.File(configs['model']['filename_predictions'], 'w') as hf:
     dset_p = hf.create_dataset('predictions', data=predictions)
     dset_y = hf.create_dataset('true_values', data=true_values)
-    
+
 plot.plot_results(predictions[:800], true_values[:800])
-'''
-'''
+
+
 # Reload the data-generator
 data_gen_test = dl.generate_clean_data(
     configs['data']['filename_clean'],

@@ -29,7 +29,7 @@ data_gen_test = dl.generate_clean_data(
     size=tesize,
     batch_size=configs['data']['batch_size']
 )
-
+print('> Testing model on', ntest, 'data rows with', steps_test, 'steps')
 tesize = steps_test * configs['data']['batch_size']
 predictions = model.predict_generator(
     generator_strip_xy(data_gen_test, true_values),

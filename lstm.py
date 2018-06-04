@@ -6,7 +6,7 @@ import numpy as np
 from numpy import newaxis
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers import LeakyReLU
-from keras.layers.recurrent import LSTM
+from keras.layers.recurrent import LSTM, GRU
 from keras.models import Sequential
 from keras.models import load_model
 
@@ -44,13 +44,13 @@ def build_network(layers):
 def build_cls_network(layers):
     model = Sequential()
 
-    model.add(LSTM(
+    model.add(GRU(
         input_dim=layers[0],
         output_dim=layers[1],
         return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(
+    model.add(GRU(
         layers[2],
         return_sequences=False))
     model.add(Dropout(0.2))
