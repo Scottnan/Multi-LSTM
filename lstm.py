@@ -72,6 +72,7 @@ def build_cls_network(layers):
     model.add(LeakyReLU(alpha=0.3))
     model.add(Dropout(0.2))
     '''
+    model.add(Dropout(0.2))
     model.add(Dense(3, activation='softmax'))
 
     start = time.time()
