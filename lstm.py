@@ -2,8 +2,6 @@ import os
 import time
 import json
 import warnings
-import numpy as np
-from numpy import newaxis
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers import LeakyReLU
 from keras.layers.recurrent import LSTM, GRU
@@ -57,21 +55,11 @@ def build_cls_network(layers):
 
     model.add(Dense(
         output_dim=layers[3]))
-    # model.add(Activation(activation='tanh'))
     model.add(LeakyReLU(alpha=0.3))
-    # model.add(Activation(activation='relu'))
-
     model.add(Dropout(0.2))
     model.add(Dense(
-        output_dim=32))
+        output_dim=layers[4]))
     model.add(Activation(activation='tanh'))
-    '''
-    model.add(LeakyReLU(alpha=0.3))
-    model.add(Dense(
-        output_dim=16))
-    model.add(LeakyReLU(alpha=0.3))
-    model.add(Dropout(0.2))
-    '''
     model.add(Dropout(0.2))
     model.add(Dense(3, activation='softmax'))
 
