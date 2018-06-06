@@ -117,10 +117,3 @@ class MulLSTM(object):
         for x, y in data_gen_test:
             self.ture_values += list(y)
             yield x
-
-
-if __name__ == '__main__':
-    model = MulLSTM(configs)
-    model.clean_data()
-    model.fit()
-    model.validation()
