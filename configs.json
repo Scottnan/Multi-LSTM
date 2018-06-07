@@ -157,7 +157,7 @@
         "train_test_split": 0.8,
         "x_window_size": 30,
         "y_window_size": 1,
-        "y_predict_column": "fwd_rtn"
+        "y_lag": "1"
     },
     "model": {
         "method": "Integer",

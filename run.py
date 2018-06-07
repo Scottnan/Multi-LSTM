@@ -20,7 +20,7 @@ class MulLSTM(object):
         self.batch_size = configs['data']['batch_size']
         self.x_window_size = configs['data']['x_window_size']
         self.y_window_size = configs['data']['y_window_size']
-        self.y_col = configs['data']['y_predict_column']  # TODO change y_col to y_lag, and y_col is useless now.
+        self.y_lag = configs['data']['y_lag']
         self.filter_cols = configs['data']['filter_columns']
         self.train_test_split = configs['data']['train_test_split']
         self.model = None
@@ -36,7 +36,7 @@ class MulLSTM(object):
                 batch_size=self.batch_size,
                 x_window_size=self.x_window_size,
                 y_window_size=self.y_window_size,
-                y_col=self.y_col,  # TODO change y_col to y_lag, and y_col is useless now.
+                y_lag=self.y_lag,
                 filter_cols=self.filter_cols,
                 normalise=False
             )

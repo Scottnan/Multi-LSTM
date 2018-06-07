@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import keras
-from math import ceil, isnan
+from math import isnan
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
 
@@ -28,12 +28,12 @@ class ETL(object):
                     data_x = hf['x'][start_index + i % size: start_index + size, :, 2:]
                     data_y = hf['y'][start_index + i % size: start_index + size]
                 if self.method == 'Integer' or self.method == "OneHot":
-                    data_y = keras.utils.to_categorical(data_y - 1, num_classes=3)
+                    data_y = keras.utils.to_categorical(data_y, num_classes=3)
                 i += batch_size
                 yield (data_x, data_y)
 
     def create_clean_datafile(self, filename_in, filename_out, batch_size=1000, x_window_size=100, y_window_size=1,
-                              y_col=0, filter_cols=None, normalise=False):
+                              y_lag=1, filter_cols=None, normalise=False):
         """Incrementally save a datafile of clean data ready for loading straight into model"""
         print('> Creating x & y data files...')
 
@@ -42,7 +42,7 @@ class ETL(object):
             batch_size=batch_size,
             x_window_size=x_window_size,
             y_window_size=y_window_size,
-            y_col=y_col,
+            y_lag=y_lag,
             filter_cols=filter_cols,
             normalise=normalise
         )
@@ -75,7 +75,7 @@ class ETL(object):
         print('> Clean datasets created in file `' + filename_out + '.h5`')
 
     # TODO normalise method
-    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_col, filter_cols, normalise):
+    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols, normalise):
         """Cleans the data in batches `batch_size` at a time"""
         # TODO read multiple files
         raw_data = pd.read_hdf(filepath)
@@ -118,7 +118,9 @@ class ETL(object):
             data = raw_data[raw_data['INNER_CODE'] == code]
             data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
-            if self.method == "OneHot":
+            y_col = list(data.columns).index('rtn')
+            """
+                        if self.method == "OneHot":
                 data.dropna(inplace=True)
                 one_hot = keras.utils.to_categorical(data['rtn'] - 1, num_classes=5)
                 data.drop("rtn", axis=1, inplace=True)
@@ -129,12 +131,13 @@ class ETL(object):
                 # y_col = [list(data.columns).index(c) for c in one_col].sort()   # TODO FIX BUG one_hot columns
             else:
                 y_col = list(data.columns).index('rtn')
+            """
             num_rows = len(data)
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
                 x_window_data = data[i:(i + x_window_size)]
-                y_window_data = data[(i + x_window_size):(i + x_window_size + y_window_size)]
+                y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
 
                 # Remove any windows that contain NaN
                 if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
@@ -187,8 +190,9 @@ class ETL(object):
             if isnan(x):
                 return x
             else:
-                return ceil(x / (1 / cate))
-        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)  # return a rank ratio
+                return int(x / (1 / cate))
+        # it will return a rank ratio not the origin forward return
+        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
 
     def zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""
