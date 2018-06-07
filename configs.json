@@ -1,6 +1,9 @@
 {
     "data": {
-        "filename": "raw_data/20150101_20151231.h5",
+        "filename": [
+          "raw_data/20150101_20151231.h5",
+          "raw_data/20160101_20161231.h5"
+        ],
         "filename_clean": "clean_data/20150101_20151231_int3.h5",
         "filter_columns": [
             "fwd_rtn",

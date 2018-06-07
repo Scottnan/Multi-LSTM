@@ -38,7 +38,7 @@ class ETL(object):
         print('> Creating x & y data files...')
 
         data_gen = self.clean_data(
-            filename_in,
+            filepath=filename_in,
             batch_size=batch_size,
             x_window_size=x_window_size,
             y_window_size=y_window_size,
@@ -75,8 +75,10 @@ class ETL(object):
 
     def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols):
         """Cleans the data in batches `batch_size` at a time"""
-        # TODO read multiple files
-        raw_data = pd.read_hdf(filepath)
+        f = []
+        for file in filepath:
+            f.append(pd.read_hdf(file))
+        raw_data = pd.concat(f)
 
         if filter_cols:
             # Remove any columns from data that we don't need by getting the difference between cols and filter list
