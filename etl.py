@@ -43,8 +43,7 @@ class ETL(object):
             x_window_size=x_window_size,
             y_window_size=y_window_size,
             y_lag=y_lag,
-            filter_cols=filter_cols,
-            normalise=normalise
+            filter_cols=filter_cols
         )
 
         i = 0
@@ -74,8 +73,7 @@ class ETL(object):
 
         print('> Clean datasets created in file `' + filename_out + '.h5`')
 
-    # TODO normalise method
-    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols, normalise):
+    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols):
         """Cleans the data in batches `batch_size` at a time"""
         # TODO read multiple files
         raw_data = pd.read_hdf(filepath)
@@ -144,10 +142,6 @@ class ETL(object):
                     i += 1
                     continue
 
-                if normalise:
-                    abs_base, x_window_data = self.zero_base_standardise(x_window_data)
-                    _, y_window_data = self.zero_base_standardise(y_window_data, abs_base=abs_base)
-
                 if self.method == "OneHot":
                     y_average = y_window_data.values[:, -5:]
                 else:
@@ -193,19 +187,3 @@ class ETL(object):
                 return int(x / (1 / cate))
         # it will return a rank ratio not the origin forward return
         data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
-
-    def zero_base_standardise(self, data, abs_base=pd.DataFrame()):
-        """Standardise dataframe to be zero based percentage returns from i=0"""
-        if abs_base.empty:
-            abs_base = data.iloc[0]
-        data_standardised = (data / abs_base) - 1
-        return abs_base, data_standardised
-
-    def min_max_normalise(self, data, data_min=pd.DataFrame(), data_max=pd.DataFrame()):
-        """Normalise a Pandas dataframe using column-wise min-max normalisation (can use custom min, max if desired)"""
-        if data_min.empty:
-            data_min = data.min()
-        if data_max.empty:
-            data_max = data.max()
-        data_normalised = (data - data_min) / (data_max - data_min)
-        return data_min, data_max, data_normalised
