@@ -5,9 +5,7 @@ import warnings
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers import LeakyReLU
 from keras.layers.recurrent import LSTM, GRU
-from keras.models import Sequential
-from keras.models import load_model
-
+from keras.models import Sequential, load_model
 configs = json.loads(open(os.path.join(os.path.dirname(__file__), 'configs.json')).read())
 warnings.filterwarnings("ignore")
 

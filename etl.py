@@ -15,7 +15,7 @@ class ETL(object):
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
     def generate_clean_data(self, filename, size, batch_size=1000, start_index=0):
-        # TODO check the size/batch_size is int?
+        assert (size / batch_size).is_integer(), "Size / Batch size is not an integer!"
         if self.method == "MinMax":
             self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
