@@ -37,8 +37,7 @@ class MulLSTM(object):
                 x_window_size=self.x_window_size,
                 y_window_size=self.y_window_size,
                 y_lag=self.y_lag,
-                filter_cols=self.filter_cols,
-                normalise=False
+                filter_cols=self.filter_cols
             )
             print('> Generating clean data from:', self.clean_path, 'with batch_size:', self.batch_size)
 

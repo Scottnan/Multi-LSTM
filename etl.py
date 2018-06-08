@@ -33,7 +33,7 @@ class ETL(object):
                 yield (data_x, data_y)
 
     def create_clean_datafile(self, filename_in, filename_out, batch_size=1000, x_window_size=100, y_window_size=1,
-                              y_lag=1, filter_cols=None, normalise=False):
+                              y_lag=1, filter_cols=None):
         """Incrementally save a datafile of clean data ready for loading straight into model"""
         print('> Creating x & y data files...')
 
@@ -188,4 +188,4 @@ class ETL(object):
             else:
                 return int(x / (1 / cate))
         # it will return a rank ratio not the origin forward return
-        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
+        data['fwd_rtn'] = ((data.fwd_rtn.rank(ascending=False) - 1) / len(data)).apply(fun)
