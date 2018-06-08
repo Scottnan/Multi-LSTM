@@ -1,7 +1,9 @@
 import unittest
 import h5py
 import os
+import warnings
 from etl import ETL
+warnings.filterwarnings("ignore")
 
 
 class TestInteger(unittest.TestCase):
@@ -110,4 +112,4 @@ class TestInteger(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()
