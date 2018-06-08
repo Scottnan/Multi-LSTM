@@ -4,7 +4,6 @@ import os
 from etl import ETL
 
 
-# TODO create a unittest for etl
 class TestInteger(unittest.TestCase):
     def setUp(self):
         self.dl = ETL("Integer")
