@@ -1,12 +1,9 @@
-import pandas as pd
-import lstm
+import gru
 import etl
 import h5py
-import numpy as np
-from math import ceil, isnan
 import json
 configs = json.loads(open('configs.json').read())
-model = lstm.load_network("model/model_saved_2016.h5")
+model = gru.load_network("model/model_saved_2016.h5")
 dl = etl.ETL("Integer")
 
 true_values = []

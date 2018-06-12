@@ -2,6 +2,7 @@ import os
 import time
 import json
 import warnings
+from loss_function import my_categorical_crossentropy
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers import LeakyReLU
 from keras.layers.recurrent import LSTM, GRU
@@ -63,7 +64,7 @@ def build_cls_network(layers):
 
     start = time.time()
     model.compile(
-        loss=configs['model']['loss_function'],
+        loss=my_categorical_crossentropy,
         optimizer=configs['model']['optimiser_function'],
         metrics=['accuracy'])
 

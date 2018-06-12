@@ -148,7 +148,7 @@ class ETL(object):
                     y_average = y_window_data.values[:, -5:]
                 else:
                     y_average = np.average(y_window_data.values[:, y_col])
-                x_data.append(x_window_data.values)
+                x_data.append(x_window_data.values[:, :-1])
                 y_data.append(y_average)
                 i += 1
                 j += 1

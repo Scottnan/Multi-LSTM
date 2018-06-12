@@ -1,6 +1,8 @@
 import os
 import time
-import lstm, etl, json
+import gru
+import etl
+import json
 import plot_utils as plot
 import keras
 import datetime
@@ -66,7 +68,7 @@ class MulLSTM(object):
         print('> Clean data has', self.fit_nrows, 'data rows. Training on', self.ntrain, 'rows with', steps_per_epoch,
               'steps-per-epoch')
 
-        self.model = lstm.build_cls_network([self.fit_ncols-2, 400, 400, 100, 32])
+        self.model = gru.build_cls_network([self.fit_ncols - 2, 400, 400, 100, 32])
         self.fit_model(data_gen_train, steps_per_epoch, configs, val_data)
 
     def validation(self):
@@ -109,10 +111,16 @@ class MulLSTM(object):
         return
 
     def load_model(self):
-        self.model = lstm.load_network(self.model_path)
+        self.model = gru.load_network(self.model_path)
 
     def generator_strip_xy(self, data_gen_test):
         self.ture_values = []
         for x, y in data_gen_test:
             self.ture_values += list(y)
             yield x
+
+
+if __name__ == "__main__":
+    model = MulLSTM(configs)
+    model.clean_data()
+    model.fit()

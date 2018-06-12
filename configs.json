@@ -4,7 +4,7 @@
           "raw_data/20150101_20151231.h5",
           "raw_data/20160101_20161231.h5"
         ],
-        "filename_clean": "clean_data/20150101_20151231_int3.h5",
+        "filename_clean": "clean_data/20150101_20161231_int3.h5",
         "filter_columns": [
             "fwd_rtn",
             "DATE",
@@ -160,12 +160,12 @@
         "train_test_split": 0.8,
         "x_window_size": 30,
         "y_window_size": 1,
-        "y_lag": "1"
+        "y_lag": 1
     },
     "model": {
         "method": "Integer",
         "epochs": 5,
-        "loss_function": "categorical_crossentropy",
+        "loss_function": "my_categorical_crossentropy",
         "optimiser_function": "Adam",
         "filename_model": "model/model_saved_2015.h5",
         "filename_predictions": "model/model_predictions.h5"
