@@ -108,7 +108,7 @@ class ETL(object):
                 if self.method == "OneHot":
                     self.y2integer(data)
                 else:
-                    self.y2integer(data)  # useless if
+                    self.y2_2class(data)  # useless if
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
             raw_data.sort_values(by="DATE", inplace=True)
@@ -136,7 +136,7 @@ class ETL(object):
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
-                x_window_data = data[i:(i + x_window_size)]
+                x_window_data = data.iloc[i:(i + x_window_size), :-1]
                 y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
 
                 # Remove any windows that contain NaN
@@ -148,7 +148,7 @@ class ETL(object):
                     y_average = y_window_data.values[:, -5:]
                 else:
                     y_average = np.average(y_window_data.values[:, y_col])
-                x_data.append(x_window_data.values[:, :-1])
+                x_data.append(x_window_data.values)
                 y_data.append(y_average)
                 i += 1
                 j += 1
@@ -172,13 +172,13 @@ class ETL(object):
                  per < ratio < 1-per x=na
         """
         def fun(x):
-            if isnan(x) or (x >= per or x <= 1 - per):
+            if isnan(x) or (per <= x <= 1 - per):
                 return np.nan
             elif x <= per:
-                return 1
+                return 1  # 正例 前30%
             else:
-                return 0
-        data['fwd_rtn'] = (data.fwd_rtn.rank(ascending=False) / len(data)).apply(fun)
+                return 0  # 反例 后30%
+        data['fwd_rtn'] = ((data.fwd_rtn.rank(ascending=False) - 1) / len(data)).apply(fun)
 
     @staticmethod
     def y2integer(data, cate=3):
