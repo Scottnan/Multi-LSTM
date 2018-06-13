@@ -56,7 +56,7 @@ class MulLSTM(object):
             val_data_x = hf['x'][self.ntrain:, :, 2:]
             val_data_y = hf['y'][self.ntrain:]
             if self.dl.method == 'Integer' or self.dl.method == "OneHot":
-                val_data_y = keras.utils.to_categorical(val_data_y - 1, num_classes=3)
+                val_data_y = keras.utils.to_categorical(val_data_y - 1, num_classes=2)
 
         val_data = (val_data_x, val_data_y)
         data_gen_train = self.dl.generate_clean_data(
@@ -68,7 +68,7 @@ class MulLSTM(object):
         print('> Clean data has', self.fit_nrows, 'data rows. Training on', self.ntrain, 'rows with', steps_per_epoch,
               'steps-per-epoch')
 
-        self.model = gru.build_cls_network([self.fit_ncols - 2, 400, 400, 100, 32])
+        self.model = gru.build_cls_network([self.fit_ncols - 2, 200, 200, 100, 32])
         self.fit_model(data_gen_train, steps_per_epoch, configs, val_data)
 
     def validation(self):

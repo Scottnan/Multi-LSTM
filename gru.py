@@ -40,12 +40,11 @@ def build_network(layers):
 
 def build_cls_network(layers):
     model = Sequential()
-
     model.add(GRU(
         input_dim=layers[0],
         output_dim=layers[1],
         return_sequences=True))
-    model.add(Dropout(0.2))
+    # model.add(Dropout(0.2))
 
     model.add(GRU(
         layers[2],
@@ -55,16 +54,16 @@ def build_cls_network(layers):
     model.add(Dense(
         output_dim=layers[3]))
     model.add(LeakyReLU(alpha=0.3))
-    model.add(Dropout(0.2))
+    model.add(Dropout(0.5))
     model.add(Dense(
         output_dim=layers[4]))
-    model.add(Activation(activation='tanh'))
-    model.add(Dropout(0.2))
-    model.add(Dense(3, activation='softmax'))
+    model.add(Activation(activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(2, activation='softmax'))
 
     start = time.time()
     model.compile(
-        loss=my_categorical_crossentropy,
+        loss=configs['model']['loss_function'],
         optimizer=configs['model']['optimiser_function'],
         metrics=['accuracy'])
 

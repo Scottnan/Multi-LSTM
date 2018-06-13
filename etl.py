@@ -27,8 +27,8 @@ class ETL(object):
                 else:
                     data_x = hf['x'][start_index + i % size: start_index + size, :, 2:]
                     data_y = hf['y'][start_index + i % size: start_index + size]
-                if self.method == 'Integer' or self.method == "OneHot":
-                    data_y = keras.utils.to_categorical(data_y, num_classes=3)
+                if self.method == 'Integer':
+                    data_y = keras.utils.to_categorical(data_y, num_classes=2)
                 i += batch_size
                 yield (data_x, data_y)
 
