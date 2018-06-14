@@ -108,35 +108,24 @@ class ETL(object):
                 if self.method == "OneHot":
                     self.y2integer(data)
                 else:
-                    self.y2_2class(data)  # useless if
+                    self.y2_2class(data)
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
-            raw_data.sort_values(by="DATE", inplace=True)
 
         # Each stock feature is scrolled as sample data
         for code in set(raw_data['INNER_CODE']):
             data = raw_data[raw_data['INNER_CODE'] == code]
+            raw_data.sort_values(by="DATE", inplace=True)
+            data['rtn_ser'] = data['rtn_ser'].shift()
             data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
             y_col = list(data.columns).index('rtn')
-            """
-                        if self.method == "OneHot":
-                data.dropna(inplace=True)
-                one_hot = keras.utils.to_categorical(data['rtn'] - 1, num_classes=5)
-                data.drop("rtn", axis=1, inplace=True)
-                old_col = data.columns
-                data = pd.concat([data, pd.DataFrame(one_hot)], axis=1)
-                new_col = data.columns
-                one_col = list(set(new_col) - set(old_col))
-                # y_col = [list(data.columns).index(c) for c in one_col].sort()   # TODO FIX BUG one_hot columns
-            else:
-                y_col = list(data.columns).index('rtn')
-            """
             num_rows = len(data)
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
-                x_window_data = data.iloc[i:(i + x_window_size), :-1]
+                x_window_data = data.drop("rtn", axis=1)
+                x_window_data = x_window_data[i:(i + x_window_size)]
                 y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
 
                 # Remove any windows that contain NaN
@@ -178,6 +167,7 @@ class ETL(object):
                 return 1  # 正例 前30%
             else:
                 return 0  # 反例 后30%
+        data['rtn_ser'] = data.fwd_rtn
         data['fwd_rtn'] = ((data.fwd_rtn.rank(ascending=False) - 1) / len(data)).apply(fun)
 
     @staticmethod

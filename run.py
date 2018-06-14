@@ -7,7 +7,7 @@ import plot_utils as plot
 import keras
 import datetime
 import h5py
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 configs = json.loads(open('configs.json').read())
 tstart = time.time()
 log_time = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
@@ -56,7 +56,7 @@ class MulLSTM(object):
             val_data_x = hf['x'][self.ntrain:, :, 2:]
             val_data_y = hf['y'][self.ntrain:]
             if self.dl.method == 'Integer' or self.dl.method == "OneHot":
-                val_data_y = keras.utils.to_categorical(val_data_y - 1, num_classes=2)
+                val_data_y = keras.utils.to_categorical(val_data_y, num_classes=2)
 
         val_data = (val_data_x, val_data_y)
         data_gen_train = self.dl.generate_clean_data(
@@ -68,7 +68,8 @@ class MulLSTM(object):
         print('> Clean data has', self.fit_nrows, 'data rows. Training on', self.ntrain, 'rows with', steps_per_epoch,
               'steps-per-epoch')
 
-        self.model = gru.build_cls_network([self.fit_ncols - 2, 200, 200, 100, 32])
+        self.model = gru.build_cls_network([self.fit_ncols - 2, 32, 32, 64, 32])
+        self.model.summary()
         self.fit_model(data_gen_train, steps_per_epoch, configs, val_data)
 
     def validation(self):
@@ -99,12 +100,13 @@ class MulLSTM(object):
     def fit_model(self, data_gen_train, steps_per_epoch, configs, val_data):
         tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0,
                                   write_graph=True, write_images=True)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=5)
         self.model.fit_generator(
             data_gen_train,
             steps_per_epoch=steps_per_epoch,
             epochs=configs['model']['epochs'],
             validation_data=val_data,
-            callbacks=[tensorboard]
+            callbacks=[tensorboard, early_stopping]
         )
         self.model.save(configs['model']['filename_model'])
         print('> Model Trained! Weights saved in', configs['model']['filename_model'])
@@ -123,4 +125,5 @@ class MulLSTM(object):
 if __name__ == "__main__":
     model = MulLSTM(configs)
     model.clean_data()
+
     model.fit()

@@ -43,22 +43,23 @@ def build_cls_network(layers):
     model.add(GRU(
         input_dim=layers[0],
         output_dim=layers[1],
+        recurrent_dropout=0.2,
         return_sequences=True))
-    # model.add(Dropout(0.2))
-
+    model.add(Dropout(0.2))
     model.add(GRU(
         layers[2],
+        recurrent_dropout=0.5,
         return_sequences=False))
     model.add(Dropout(0.2))
 
     model.add(Dense(
         output_dim=layers[3]))
     model.add(LeakyReLU(alpha=0.3))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.2))
     model.add(Dense(
         output_dim=layers[4]))
-    model.add(Activation(activation='relu'))
-    model.add(Dropout(0.5))
+    # model.add(Activation(activation='relu'))
+    model.add(Dropout(0.2))
     model.add(Dense(2, activation='softmax'))
 
     start = time.time()
