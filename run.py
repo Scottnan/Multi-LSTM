@@ -121,9 +121,25 @@ class MulLSTM(object):
             self.ture_values += list(y)
             yield x
 
+    def generator_train_data_for_test(self):
+        if os.path.exists(self.clean_path):
+            print('> Clean data exists!')
+        else:
+            self.dl.create_clean_datafile(
+                filename_in=self.raw_path,
+                filename_out=self.clean_path,
+                batch_size=self.batch_size,
+                x_window_size=self.x_window_size,
+                y_window_size=self.y_window_size,
+                y_lag=self.y_lag,
+                filter_cols=self.filter_cols,
+                for_test=True
+            )
+            print('> Generating clean data from:', self.clean_path, 'with batch_size:', self.batch_size)
+
 
 if __name__ == "__main__":
     model = MulLSTM(configs)
-    model.clean_data()
-
-    model.fit()
+    # model.clean_data()
+    model.generator_train_data_for_test()
+    # model.fit()

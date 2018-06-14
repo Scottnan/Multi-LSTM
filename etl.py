@@ -33,7 +33,7 @@ class ETL(object):
                 yield (data_x, data_y)
 
     def create_clean_datafile(self, filename_in, filename_out, batch_size=1000, x_window_size=100, y_window_size=1,
-                              y_lag=1, filter_cols=None):
+                              y_lag=1, filter_cols=None, for_test=False):
         """Incrementally save a datafile of clean data ready for loading straight into model"""
         print('> Creating x & y data files...')
 
@@ -43,7 +43,8 @@ class ETL(object):
             x_window_size=x_window_size,
             y_window_size=y_window_size,
             y_lag=y_lag,
-            filter_cols=filter_cols
+            filter_cols=filter_cols,
+            for_test=False
         )
 
         i = 0
@@ -73,7 +74,7 @@ class ETL(object):
 
         print('> Clean datasets created in file `' + filename_out + '.h5`')
 
-    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols):
+    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols, for_test=False):
         """Cleans the data in batches `batch_size` at a time"""
         f = []
         for file in filepath:
@@ -129,9 +130,14 @@ class ETL(object):
                 y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
 
                 # Remove any windows that contain NaN
-                if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
-                    i += 1
-                    continue
+                if for_test:
+                    if x_window_data.isnull().values.any():
+                        i += 1
+                        continue
+                else:
+                    if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
+                        i += 1
+                        continue
 
                 if self.method == "OneHot":
                     y_average = y_window_data.values[:, -5:]
