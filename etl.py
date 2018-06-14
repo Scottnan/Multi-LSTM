@@ -44,7 +44,7 @@ class ETL(object):
             y_window_size=y_window_size,
             y_lag=y_lag,
             filter_cols=filter_cols,
-            for_test=False
+            for_test=for_test
         )
 
         i = 0
