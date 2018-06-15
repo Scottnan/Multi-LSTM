@@ -12,6 +12,7 @@ class ETL(object):
         assert y_method in ["Numeric", "MinMax", "Integer", "OneHot"], "y method must in \"Numeric\", \"MinMax\", " \
                                                                        "\"Integer\", \"OneHot\""
         self.method = y_method
+        self.usage = "train"
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
     def generate_clean_data(self, filename, size, batch_size=1000, start_index=0):
@@ -27,7 +28,7 @@ class ETL(object):
                 else:
                     data_x = hf['x'][start_index + i % size: start_index + size, :, 2:]
                     data_y = hf['y'][start_index + i % size: start_index + size]
-                if self.method == 'Integer':
+                if self.method == 'Integer' and self.usage == "train":
                     data_y = keras.utils.to_categorical(data_y, num_classes=2)
                 i += batch_size
                 yield (data_x, data_y)

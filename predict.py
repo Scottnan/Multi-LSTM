@@ -3,8 +3,9 @@ import etl
 import h5py
 import json
 configs = json.loads(open('configs.json').read())
-model = gru.load_network("model/model_saved_2016.h5")
+model = gru.load_network("model/model_saved_2016_20180614.h5")
 dl = etl.ETL("Integer")
+dl.usage = "test"
 
 true_values = []
 
