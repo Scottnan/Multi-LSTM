@@ -40,18 +40,13 @@ def build_network(layers):
 
 def build_cls_network(layers):
     model = Sequential()
-    model.add(Dense(layers[0],
-                    activation="relu",
-                    input_shape=(configs['data']['x_window_size'], layers[0]),
-                    kernel_initializer=keras.initializers.ones()))
     model.add(GRU(
-        output_dim=layers[0],
-        recurrent_dropout=0.5,
-        return_sequences=True))
-    model.add(GRU(
+        input_dim=layers[0],
         output_dim=layers[1],
         recurrent_dropout=0.5,
         return_sequences=True))
+    # model.add(Dropout(0.2))
+
     model.add(GRU(
         layers[2],
         recurrent_dropout=0.5,
@@ -59,12 +54,13 @@ def build_cls_network(layers):
     model.add(Dropout(0.5))
 
     model.add(Dense(
-        output_dim=layers[3],
-        activation='relu'))
+        output_dim=layers[3]))
     model.add(LeakyReLU(alpha=0.3))
     model.add(Dropout(0.5))
     model.add(Dense(
         output_dim=layers[4]))
+    model.add(Activation(activation='tanh'))
+    model.add(Dropout(0.5))
     model.add(Dense(2, activation='softmax'))
 
     start = time.time()

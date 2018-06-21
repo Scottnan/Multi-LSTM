@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import keras
+from multiprocessing import Pool, Manager, Process
 from math import isnan
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
@@ -89,11 +90,6 @@ class ETL(object):
                 del raw_data[col]
 
         # Convert y-predict column name to numerical index
-
-        x_data = []
-        y_data = []
-
-        j = 0  # The number of sample
         if self.method == "MinMax":
             raw_data.dropna(inplace=True)
             scalar = MinMaxScaler(feature_range=(0, 1))
@@ -114,7 +110,62 @@ class ETL(object):
                 tmp = pd.concat([tmp, data])
             raw_data = tmp
 
+        # manager1 = Manager()
+        # manager2 = Manager()
+        x_data = []
+        y_data = []
+
+        j = 0  # The number of sample
         # Each stock feature is scrolled as sample data
+        '''
+        data_list = [[code, raw_data[raw_data['INNER_CODE'] == code], x_data, y_data]
+                     for code in set(raw_data['INNER_CODE'])]
+
+        def clean_func_for_code(code, data, x_data, y_data):
+            # data = raw_data[raw_data['INNER_CODE'] == code]
+            raw_data.sort_values(by="DATE", inplace=True)
+            data['rtn_ser'] = data['rtn_ser'].shift()
+            data['rtn'] = data['fwd_rtn'].shift()  # Shift 1 period
+            data.drop("fwd_rtn", axis=1, inplace=True)
+            y_col = list(data.columns).index('rtn')
+            num_rows = len(data)
+            print('> Creating x & y data files | Code:', code)
+            i = 0
+            while (i + x_window_size + y_window_size) <= num_rows:
+                x_window_data = data.drop("rtn", axis=1)
+                x_window_data = x_window_data[i:(i + x_window_size)]
+                y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
+
+                # Remove any windows that contain NaN
+                if for_test:
+                    if x_window_data.isnull().values.any():
+                        i += 1
+                        continue
+                else:
+                    if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
+                        i += 1
+                        continue
+
+                if self.method == "OneHot":
+                    y_average = y_window_data.values[:, -5:]
+                else:
+                    y_average = np.average(y_window_data.values[:, y_col])
+                x_data.append(x_window_data.values)
+                y_data.append(y_average)
+                i += 1
+                # j += 1
+
+        if len(y_data) % batch_size == 0 and len(y_data) != 0:
+            x_np_arr = np.array(x_data)
+            y_np_arr = np.array(y_data)
+            x_data = manager1.list()
+            y_data = manager2.list()
+            yield (x_np_arr, y_np_arr)
+
+        pool = Pool()
+        pool.map(clean_func_for_code, data_list)
+        '''
+
         for code in set(raw_data['INNER_CODE']):
             data = raw_data[raw_data['INNER_CODE'] == code]
             raw_data.sort_values(by="DATE", inplace=True)
@@ -157,6 +208,7 @@ class ETL(object):
                     x_data = []
                     y_data = []
                     yield (x_np_arr, y_np_arr)
+
 
     @staticmethod
     def y2_2class(data, per=0.3):

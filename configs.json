@@ -1,9 +1,13 @@
 {
     "data": {
         "filename": [
-          "raw_data/20160101_20161231.h5"
+            "raw_data/20120101_20121231.h5",
+            "raw_data/20130101_20131231.h5",
+            "raw_data/20140101_20141231.h5",
+            "raw_data/20150101_20151231.h5",
+            "raw_data/20160101_20161231.h5"
         ],
-        "filename_clean": "clean_data/20160101_20161231.h5",
+        "filename_clean": "clean_data/20120101_20161231.h5",
         "filter_columns": [
             "fwd_rtn",
             "DATE",

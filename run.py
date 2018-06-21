@@ -68,7 +68,7 @@ class MulLSTM(object):
         print('> Clean data has', self.fit_nrows, 'data rows. Training on', self.ntrain, 'rows with', steps_per_epoch,
               'steps-per-epoch')
 
-        self.model = gru.build_cls_network([self.fit_ncols - 2, 128, 64, 64, 32])
+        self.model = gru.build_cls_network([self.fit_ncols - 2, 128, 128, 64, 32])
         self.model.summary()
         self.fit_model(data_gen_train, steps_per_epoch, configs, val_data)
 
