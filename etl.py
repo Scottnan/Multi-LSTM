@@ -90,14 +90,6 @@ class ETL(object):
                 del raw_data[col]
 
         # Convert y-predict column name to numerical index
-        if self.method == "MinMax":
-            raw_data.dropna(inplace=True)
-            scalar = MinMaxScaler(feature_range=(0, 1))
-            self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
-            joblib.dump(self.scalar, 'model/scalar.pkl')
-            raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
-            raw_data.drop("DATE", axis=1, inplace=True)
-
         if self.method == "Integer" or self.method == "OneHot":
             tmp = pd.DataFrame()
             date = set(raw_data.DATE)

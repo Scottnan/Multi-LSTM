@@ -1,13 +1,9 @@
 {
     "data": {
         "filename": [
-            "raw_data/20120101_20121231.h5",
-            "raw_data/20130101_20131231.h5",
-            "raw_data/20140101_20141231.h5",
-            "raw_data/20150101_20151231.h5",
             "raw_data/20160101_20161231.h5"
         ],
-        "filename_clean": "clean_data/20120101_20161231.h5",
+        "filename_clean": "clean_data/20160101_20161231_10.h5",
         "filter_columns": [
             "fwd_rtn",
             "DATE",
@@ -170,7 +166,7 @@
         "epochs": 100,
         "loss_function": "categorical_crossentropy",
         "optimiser_function": "Adam",
-        "filename_model": "model/model_saved_2016_20180614.h5",
+        "filename_model": "model/model_saved_2016_10_20180628.h5",
         "filename_predictions": "model/model_predictions.h5"
     }
 }
