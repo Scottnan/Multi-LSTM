@@ -33,8 +33,8 @@ def get_factor_tbl(factors, from_to, value_col="IMPUTED"):
 
 
 if __name__ == "__main__":
-    start = 20100101
-    end = 20101231
+    start = 20160101
+    end = 20161231
     path = 'E:/GCAMCDL_DC'
     dirs = os.listdir(path)
     d = get_factor_tbl(dirs, [start, end])

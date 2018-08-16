@@ -1,41 +1,52 @@
 import h5py
 import numpy as np
 import pandas as pd
+import keras
+from multiprocessing import Pool, Manager, Process
+from math import isnan
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
 
 
 class ETL(object):
+    def __init__(self, y_method="Numeric"):
+        assert y_method in ["Numeric", "MinMax", "Integer", "OneHot"], "y method must in \"Numeric\", \"MinMax\", " \
+                                                                       "\"Integer\", \"OneHot\""
+        self.method = y_method
+        self.usage = "train"
     """Extract Transform Load class for all data operations pre model inputs. Data is read in generative way to allow
     for large datafiles and low memory utilisation"""
     def generate_clean_data(self, filename, size, batch_size=1000, start_index=0):
-        # TODO check the size/batch_size is int?
-        self.scalar = joblib.load('model/scalar.pkl')
+        assert (size / batch_size).is_integer(), "Size / Batch size is not an integer!"
+        if self.method == "MinMax":
+            self.scalar = joblib.load('model/scalar.pkl')
         with h5py.File(filename, 'r') as hf:
-            i = start_index
+            i = 0
             while True:
                 if i % size < (i + batch_size) % size:
-                    data_x = hf['x'][i % size: (i + batch_size) % size]
-                    data_y = hf['y'][i % size: (i + batch_size) % size]
+                    data_x = hf['x'][start_index + i % size: start_index + (i + batch_size) % size, :, 2:]
+                    data_y = hf['y'][start_index + i % size: start_index + (i + batch_size) % size]
                 else:
-                    data_x = hf['x'][i % size: size]
-                    data_y = hf['y'][i % size: size]
+                    data_x = hf['x'][start_index + i % size: start_index + size, :, 2:]
+                    data_y = hf['y'][start_index + i % size: start_index + size]
+                if self.method == 'Integer' and self.usage == "train":
+                    data_y = keras.utils.to_categorical(data_y, num_classes=2)
                 i += batch_size
                 yield (data_x, data_y)
 
     def create_clean_datafile(self, filename_in, filename_out, batch_size=1000, x_window_size=100, y_window_size=1,
-                              y_col=0, filter_cols=None, normalise=False):
+                              y_lag=1, filter_cols=None, for_test=False):
         """Incrementally save a datafile of clean data ready for loading straight into model"""
         print('> Creating x & y data files...')
 
         data_gen = self.clean_data(
-            filename_in,
+            filepath=filename_in,
             batch_size=batch_size,
             x_window_size=x_window_size,
             y_window_size=y_window_size,
-            y_col=y_col,
+            y_lag=y_lag,
             filter_cols=filter_cols,
-            normalise=normalise
+            for_test=for_test
         )
 
         i = 0
@@ -46,7 +57,10 @@ class ETL(object):
             dset_x = hf.create_dataset('x', shape=x1.shape, maxshape=(None, x1.shape[1], x1.shape[2]), chunks=True)
             dset_x[:] = x1
             rcount_y = y1.shape[0]
-            dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,), chunks=True)
+            if self.method == "OneHot":
+                dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None, y1.shape[1], y1.shape[2]), chunks=True)
+            else:
+                dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,), chunks=True)
             dset_y[:] = y1
 
             for x_batch, y_batch in data_gen:
@@ -62,10 +76,12 @@ class ETL(object):
 
         print('> Clean datasets created in file `' + filename_out + '.h5`')
 
-    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_col, filter_cols, normalise):
-        """Cleans and Normalises the data in batches `batch_size` at a time"""
-        raw_data = pd.read_hdf(filepath)
-        # codes = set(raw_data['INNER_CODE'].tolist())
+    def clean_data(self, filepath, batch_size, x_window_size, y_window_size, y_lag, filter_cols, for_test=False):
+        """Cleans the data in batches `batch_size` at a time"""
+        f = []
+        for file in filepath:
+            f.append(pd.read_hdf(file))
+        raw_data = pd.concat(f)
 
         if filter_cols:
             # Remove any columns from data that we don't need by getting the difference between cols and filter list
@@ -74,40 +90,111 @@ class ETL(object):
                 del raw_data[col]
 
         # Convert y-predict column name to numerical index
+        if self.method == "MinMax":
+            raw_data.dropna(inplace=True)
+            scalar = MinMaxScaler(feature_range=(0, 1))
+            self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
+            joblib.dump(self.scalar, 'model/scalar.pkl')
+            raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
+            raw_data.drop("DATE", axis=1, inplace=True)
 
+        if self.method == "Integer" or self.method == "OneHot":
+            tmp = pd.DataFrame()
+            date = set(raw_data.DATE)
+            for d in date:
+                data = raw_data[raw_data.DATE == d]
+                if self.method == "OneHot":
+                    self.y2integer(data)
+                else:
+                    self.y2_2class(data)
+                tmp = pd.concat([tmp, data])
+            raw_data = tmp
+
+        # manager1 = Manager()
+        # manager2 = Manager()
         x_data = []
         y_data = []
+
         j = 0  # The number of sample
-        raw_data.dropna(inplace=True)
-        scalar = MinMaxScaler(feature_range=(0, 1))
-        self.scalar = scalar.fit(raw_data['fwd_rtn'].reshape(-1, 1))   # TODO future function
-        joblib.dump(self.scalar, 'model/scalar.pkl')
-        raw_data['fwd_rtn'] = self.scalar.transform(raw_data['fwd_rtn'].reshape(-1, 1))
         # Each stock feature is scrolled as sample data
-        for code in set(raw_data['INNER_CODE']):
-            data = raw_data[raw_data['INNER_CODE'] == code]
-            data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
+        '''
+        data_list = [[code, raw_data[raw_data['INNER_CODE'] == code], x_data, y_data]
+                     for code in set(raw_data['INNER_CODE'])]
+
+        def clean_func_for_code(code, data, x_data, y_data):
+            # data = raw_data[raw_data['INNER_CODE'] == code]
+            raw_data.sort_values(by="DATE", inplace=True)
+            data['rtn_ser'] = data['rtn_ser'].shift()
+            data['rtn'] = data['fwd_rtn'].shift()  # Shift 1 period
             data.drop("fwd_rtn", axis=1, inplace=True)
-            data.drop("INNER_CODE", axis=1, inplace=True)
-            num_rows = len(data)
             y_col = list(data.columns).index('rtn')
+            num_rows = len(data)
             print('> Creating x & y data files | Code:', code)
             i = 0
             while (i + x_window_size + y_window_size) <= num_rows:
-                x_window_data = data[i:(i + x_window_size)]
-                y_window_data = data[(i + x_window_size):(i + x_window_size + y_window_size)]
+                x_window_data = data.drop("rtn", axis=1)
+                x_window_data = x_window_data[i:(i + x_window_size)]
+                y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
 
                 # Remove any windows that contain NaN
-                if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
-                    i += 1
-                    continue
+                if for_test:
+                    if x_window_data.isnull().values.any():
+                        i += 1
+                        continue
+                else:
+                    if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
+                        i += 1
+                        continue
 
-                if normalise:
-                    abs_base, x_window_data = self.zero_base_standardise(x_window_data)
-                    _, y_window_data = self.zero_base_standardise(y_window_data, abs_base=abs_base)
+                if self.method == "OneHot":
+                    y_average = y_window_data.values[:, -5:]
+                else:
+                    y_average = np.average(y_window_data.values[:, y_col])
+                x_data.append(x_window_data.values)
+                y_data.append(y_average)
+                i += 1
+                # j += 1
 
-                # Average of the desired predicter y column
-                y_average = np.average(y_window_data.values[:, y_col])
+        if len(y_data) % batch_size == 0 and len(y_data) != 0:
+            x_np_arr = np.array(x_data)
+            y_np_arr = np.array(y_data)
+            x_data = manager1.list()
+            y_data = manager2.list()
+            yield (x_np_arr, y_np_arr)
+
+        pool = Pool()
+        pool.map(clean_func_for_code, data_list)
+        '''
+
+        for code in set(raw_data['INNER_CODE']):
+            data = raw_data[raw_data['INNER_CODE'] == code]
+            raw_data.sort_values(by="DATE", inplace=True)
+            data['rtn_ser'] = data['rtn_ser'].shift()
+            data['rtn'] = data['fwd_rtn'].shift()   # Shift 1 period
+            data.drop("fwd_rtn", axis=1, inplace=True)
+            y_col = list(data.columns).index('rtn')
+            num_rows = len(data)
+            print('> Creating x & y data files | Code:', code)
+            i = 0
+            while (i + x_window_size + y_window_size) <= num_rows:
+                x_window_data = data.drop("rtn", axis=1)
+                x_window_data = x_window_data[i:(i + x_window_size)]
+                y_window_data = data[(i + x_window_size + y_lag - 1):(i + x_window_size + y_window_size + y_lag - 1)]
+
+                # Remove any windows that contain NaN
+                if for_test:
+                    if x_window_data.isnull().values.any():
+                        i += 1
+                        continue
+                else:
+                    if x_window_data.isnull().values.any() or y_window_data.isnull().values.any():
+                        i += 1
+                        continue
+
+                if self.method == "OneHot":
+                    y_average = y_window_data.values[:, -5:]
+                else:
+                    y_average = np.average(y_window_data.values[:, y_col])
                 x_data.append(x_window_data.values)
                 y_data.append(y_average)
                 i += 1
@@ -122,18 +209,32 @@ class ETL(object):
                     y_data = []
                     yield (x_np_arr, y_np_arr)
 
-    def zero_base_standardise(self, data, abs_base=pd.DataFrame()):
-        """Standardise dataframe to be zero based percentage returns from i=0"""
-        if abs_base.empty:
-            abs_base = data.iloc[0]
-        data_standardised = (data / abs_base) - 1
-        return abs_base, data_standardised
 
-    def min_max_normalise(self, data, data_min=pd.DataFrame(), data_max=pd.DataFrame()):
-        """Normalise a Pandas dataframe using column-wise min-max normalisation (can use custom min, max if desired)"""
-        if data_min.empty:
-            data_min = data.min()
-        if data_max.empty:
-            data_max = data.max()
-        data_normalised = (data - data_min) / (data_max - data_min)
-        return data_min, data_max, data_normalised
+    @staticmethod
+    def y2_2class(data, per=0.3):
+        """
+        :param data: fwd_twn series
+        :param per:
+        :return: ratio <= per        x=1
+                 ratio >= 1-per      x=0
+                 per < ratio < 1-per x=na
+        """
+        def fun(x):
+            if isnan(x) or (per <= x <= 1 - per):
+                return np.nan
+            elif x <= per:
+                return 1  # 正例 前30%
+            else:
+                return 0  # 反例 后30%
+        data['rtn_ser'] = data.fwd_rtn
+        data['fwd_rtn'] = ((data.fwd_rtn.rank(ascending=False) - 1) / len(data)).apply(fun)
+
+    @staticmethod
+    def y2integer(data, cate=3):
+        def fun(x):
+            if isnan(x):
+                return x
+            else:
+                return int(x / (1 / cate))
+        # it will return a rank ratio not the origin forward return
+        data['fwd_rtn'] = ((data.fwd_rtn.rank(ascending=False) - 1) / len(data)).apply(fun)
